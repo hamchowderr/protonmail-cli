@@ -44,11 +44,15 @@
     "mail"
   ],
   "license": "MIT",
-  "author": "",
+  "author": "chowderr",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/hamchowderr/protonmail-cli.git"
   },
+  "bugs": {
+    "url": "https://github.com/hamchowderr/protonmail-cli/issues"
+  },
+  "homepage": "https://github.com/hamchowderr/protonmail-cli#readme",
   "dependencies": {
     "chalk": "^5.3.0",
     "columnify": "^1.6.0",
