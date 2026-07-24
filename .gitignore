@@ -8,3 +8,6 @@ coverage/
 # Dolt database files (added by bd init)
 .dolt/
 *.db
+
+# Beads export (disposable; kept fresh via export.auto). Source of truth = Dolt DB. cp-uif3.1
+.beads/issues.jsonl
