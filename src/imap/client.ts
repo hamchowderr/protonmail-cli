@@ -1,6 +1,9 @@
 import { ImapFlow } from 'imapflow';
 import type { FetchMessageObject } from 'imapflow';
 import { simpleParser } from 'mailparser';
+import { readFile } from 'node:fs/promises';
+import { basename, extname } from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { parseMessageSelector } from './types.js';
 import type {
   MailboxInfo,
@@ -22,8 +25,10 @@ export interface ImapClientOptions {
 
 export class ImapClient {
   private client: ImapFlow;
+  private email: string;
 
   constructor(opts: ImapClientOptions) {
+    this.email = opts.email;
     this.client = new ImapFlow({
       host: opts.host,
       port: opts.port,
@@ -359,15 +364,52 @@ export class ImapClient {
 
   async saveDraft(draft: DraftMessage): Promise<number> {
     const mimeLines = [
-      `From: <${draft.to[0]}>`,
+      // The sender is this account's configured address. Using draft.to[0] here
+      // set From to the first recipient, which Bridge then rewrote to the
+      // account default, silently ignoring the configured address.
+      `From: <${this.email}>`,
       `To: ${draft.to.join(', ')}`,
     ];
     if (draft.cc?.length) mimeLines.push(`Cc: ${draft.cc.join(', ')}`);
     if (draft.bcc?.length) mimeLines.push(`Bcc: ${draft.bcc.join(', ')}`);
     mimeLines.push(`Subject: ${draft.subject}`);
-    mimeLines.push('Content-Type: text/plain; charset=utf-8');
-    mimeLines.push('');
-    mimeLines.push(draft.body);
+    mimeLines.push('MIME-Version: 1.0');
+
+    const files = draft.attachments ?? [];
+
+    if (files.length === 0) {
+      mimeLines.push('Content-Type: text/plain; charset=utf-8');
+      mimeLines.push('');
+      mimeLines.push(draft.body);
+    } else {
+      // Attachments were previously accepted by the CLI and then dropped here:
+      // the message was always built as a flat text/plain part, so `-a` silently
+      // did nothing. A draft carrying files has to be multipart/mixed.
+      const boundary = `----pmcli_${randomBytes(12).toString('hex')}`;
+      mimeLines.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+      mimeLines.push('');
+      mimeLines.push(`--${boundary}`);
+      mimeLines.push('Content-Type: text/plain; charset=utf-8');
+      mimeLines.push('Content-Transfer-Encoding: 8bit');
+      mimeLines.push('');
+      mimeLines.push(draft.body);
+
+      for (const file of files) {
+        const data = await readFile(file);
+        const name = basename(file);
+        mimeLines.push('');
+        mimeLines.push(`--${boundary}`);
+        mimeLines.push(`Content-Type: ${mimeTypeFor(name)}; name="${name}"`);
+        mimeLines.push('Content-Transfer-Encoding: base64');
+        mimeLines.push(`Content-Disposition: attachment; filename="${name}"`);
+        mimeLines.push('');
+        // RFC 2045 caps base64 lines at 76 characters.
+        mimeLines.push(data.toString('base64').replace(/(.{76})/g, '$1\r\n'));
+      }
+
+      mimeLines.push('');
+      mimeLines.push(`--${boundary}--`);
+    }
 
     const raw = Buffer.from(mimeLines.join('\r\n'));
 
@@ -475,4 +517,25 @@ function fetchToSummary(msg: FetchMessageObject): MessageSummary {
     seen: flags.includes('\\Seen'),
     flagged: flags.includes('\\Flagged'),
   };
+}
+
+/**
+ * Minimal extension-to-MIME mapping for attachments. Falls back to
+ * application/octet-stream, which every mail client handles as a download.
+ */
+function mimeTypeFor(filename: string): string {
+  const types: Record<string, string> = {
+    '.pdf': 'application/pdf',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.csv': 'text/csv',
+    '.txt': 'text/plain',
+    '.json': 'application/json',
+    '.zip': 'application/zip',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  };
+  return types[extname(filename).toLowerCase()] ?? 'application/octet-stream';
 }
