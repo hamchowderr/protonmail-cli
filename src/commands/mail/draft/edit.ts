@@ -20,6 +20,7 @@ export async function runDraftEdit(ctx: CommandContext, id: string, opts: DraftE
     port: ctx.config.bridge.imap_port,
     email: ctx.config.bridge.email,
     password: pw,
+    name: ctx.config.bridge.name,
   });
 
   await imap.connect();

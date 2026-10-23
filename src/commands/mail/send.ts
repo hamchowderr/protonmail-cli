@@ -1,6 +1,7 @@
 import type { CommandContext } from '../context.js';
 import { SmtpClient } from '../../smtp/client.js';
 import { getPassword, KEYRING_SERVICE } from '../../config/keyring.js';
+import { formatSender } from '../../config/types.js';
 import { checkIdempotencyKey, recordIdempotencyKey } from '../../config/idempotency.js';
 
 export interface MailSendOptions {
@@ -49,7 +50,7 @@ export async function runMailSend(ctx: CommandContext, opts: MailSendOptions): P
   }));
 
   const info = await smtp.send({
-    from: ctx.config.bridge.email,
+    from: formatSender(ctx.config.bridge.email, ctx.config.bridge.name),
     to: opts.to,
     cc: opts.cc,
     bcc: opts.bcc,
