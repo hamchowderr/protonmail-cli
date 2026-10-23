@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { parseMessageSelector } from './types.js';
+import { formatSender } from '../config/types.js';
 import type {
   MailboxInfo,
   MailboxStatus,
@@ -21,14 +22,18 @@ export interface ImapClientOptions {
   port: number;
   email: string;
   password: string;
+  /** Display name for the From header of saved drafts. */
+  name?: string;
 }
 
 export class ImapClient {
   private client: ImapFlow;
   private email: string;
+  private name?: string;
 
   constructor(opts: ImapClientOptions) {
     this.email = opts.email;
+    this.name = opts.name;
     this.client = new ImapFlow({
       host: opts.host,
       port: opts.port,
@@ -367,7 +372,7 @@ export class ImapClient {
       // The sender is this account's configured address. Using draft.to[0] here
       // set From to the first recipient, which Bridge then rewrote to the
       // account default, silently ignoring the configured address.
-      `From: <${this.email}>`,
+      `From: ${this.name?.trim() ? formatSender(this.email, this.name) : `<${this.email}>`}`,
       `To: ${draft.to.join(', ')}`,
     ];
     if (draft.cc?.length) mimeLines.push(`Cc: ${draft.cc.join(', ')}`);

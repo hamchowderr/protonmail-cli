@@ -62,6 +62,7 @@ export function registerConfigCommands(
           imap_port: parseInt(imapPort, 10),
           smtp_host: smtpHost,
           smtp_port: parseInt(smtpPort, 10),
+          name: ctx.config.bridge.name,
         },
         defaults: ctx.config.defaults,
       };
@@ -88,6 +89,7 @@ export function registerConfigCommands(
           '',
           'Bridge:',
           `  Email:     ${ctx.config.bridge.email || '(not set)'}`,
+          `  Name:      ${ctx.config.bridge.name || '(not set)'}`,
           `  IMAP host: ${ctx.config.bridge.imap_host}`,
           `  IMAP port: ${ctx.config.bridge.imap_port}`,
           `  SMTP host: ${ctx.config.bridge.smtp_host}`,

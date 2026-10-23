@@ -2,6 +2,7 @@ import type { CommandContext } from '../context.js';
 import { ImapClient } from '../../imap/client.js';
 import { SmtpClient } from '../../smtp/client.js';
 import { getPassword, KEYRING_SERVICE } from '../../config/keyring.js';
+import { formatSender } from '../../config/types.js';
 import { checkIdempotencyKey, recordIdempotencyKey } from '../../config/idempotency.js';
 
 export interface MailForwardOptions {
@@ -68,7 +69,7 @@ export async function runMailForward(ctx: CommandContext, id: string, opts: Mail
   });
 
   const info = await smtp.send({
-    from: ctx.config.bridge.email,
+    from: formatSender(ctx.config.bridge.email, ctx.config.bridge.name),
     to: opts.to,
     subject,
     text: forwardBody,

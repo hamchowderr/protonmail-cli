@@ -10,6 +10,7 @@ export interface BridgeConfig {
   smtp_host: string;
   smtp_port: number;
   email: string;
+  name: string;
 }
 
 export interface DefaultsConfig {
@@ -31,6 +32,7 @@ export function defaultConfig(): Config {
       smtp_host: DEFAULT_SMTP_HOST,
       smtp_port: DEFAULT_SMTP_PORT,
       email: '',
+      name: '',
     },
     defaults: {
       mailbox: 'INBOX',
@@ -38,4 +40,12 @@ export function defaultConfig(): Config {
       format: 'text',
     },
   };
+}
+
+/** From-header value: "Name" <email> when a display name is set, else the bare address. */
+export function formatSender(email: string, name?: string): string {
+  const trimmed = name?.trim();
+  if (!trimmed) return email;
+  const escaped = trimmed.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `"${escaped}" <${email}>`;
 }

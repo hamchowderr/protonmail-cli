@@ -20,6 +20,7 @@ export async function runDraftCreate(ctx: CommandContext, opts: DraftCreateOptio
     port: ctx.config.bridge.imap_port,
     email: ctx.config.bridge.email,
     password: pw,
+    name: ctx.config.bridge.name,
   });
 
   let body = opts.body ?? '';

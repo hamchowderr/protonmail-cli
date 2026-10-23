@@ -6,6 +6,7 @@ import {
   DEFAULT_SMTP_HOST,
   DEFAULT_SMTP_PORT,
   defaultConfig,
+  formatSender,
 } from '../../src/config/types.js';
 
 describe('config constants', () => {
@@ -39,6 +40,7 @@ describe('defaultConfig', () => {
       smtp_host: '127.0.0.1',
       smtp_port: 1025,
       email: '',
+      name: '',
     });
   });
 
@@ -56,5 +58,24 @@ describe('defaultConfig', () => {
     const b = defaultConfig();
     expect(a).not.toBe(b);
     expect(a).toEqual(b);
+  });
+});
+
+describe('formatSender', () => {
+  it('returns the bare address when no name is set', () => {
+    expect(formatSender('jane@example.com')).toBe('jane@example.com');
+    expect(formatSender('jane@example.com', '')).toBe('jane@example.com');
+    expect(formatSender('jane@example.com', '   ')).toBe('jane@example.com');
+  });
+
+  it('quotes the display name before the address', () => {
+    expect(formatSender('jane@example.com', 'Jane Doe')).toBe('"Jane Doe" <jane@example.com>');
+  });
+
+  it('escapes quotes and backslashes in the name', () => {
+    expect(formatSender('jane@example.com', 'Jane "JD" Doe')).toBe(
+      '"Jane \\"JD\\" Doe" <jane@example.com>',
+    );
+    expect(formatSender('jane@example.com', 'A\\B')).toBe('"A\\\\B" <jane@example.com>');
   });
 });
