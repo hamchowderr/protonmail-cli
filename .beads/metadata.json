@@ -1,7 +1,8 @@
 {
   "database": "dolt",
   "backend": "dolt",
-  "dolt_mode": "server",
+  "dolt_mode": "embedded",
   "dolt_database": "protonmail_cli",
-  "project_id": "3d64ff8c-48e2-48d3-abd2-07f8ebd8811a"
+  "project_id": "3d64ff8c-48e2-48d3-abd2-07f8ebd8811a",
+  "braynee_seen_bd_version": "1.3.1"
 }
